@@ -5,6 +5,7 @@ import os
 from telegram import Bot
 from telegram.constants import PARSEMODE_MARKDOWN
 from tinvest import SyncClient
+from logger import log_start_end
 from stats import get_stats_for_period, _get_top_std_top_increase, _get_top_increase
 
 USD = "usd"
@@ -15,6 +16,7 @@ INVEST_CLUB_CHAT_ID = "-1001701958454"
 # INVEST_CLUB_CHAT_ID = 443842630  # ilya tkachev
 
 
+@log_start_end
 def etf_stats_job():
     bot = Bot(token=os.getenv(TELEGRAM_BOT_TOKEN))
     client = SyncClient(os.getenv(TINKOFF_OPEN_API_TOKEN))
@@ -57,6 +59,7 @@ def etf_stats_job():
         _send_screenshot_with_caption(bot, message, stats)
 
 
+@log_start_end
 def stocks_stats_job():
     bot = Bot(token=os.getenv(TELEGRAM_BOT_TOKEN))
     client = SyncClient(os.getenv(TINKOFF_OPEN_API_TOKEN))

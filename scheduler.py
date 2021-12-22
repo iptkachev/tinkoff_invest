@@ -5,9 +5,10 @@ from jobs import etf_stats_job, stocks_stats_job
 
 
 def main():
+    logger = logging.getLogger(__name__)
     schedule.every().monday.at("09:00").do(etf_stats_job)
     schedule.every().day.at("09:30").do(stocks_stats_job)
-
+    logger.info("start scheduler")
     while True:
         schedule.run_pending()
         time.sleep(1)

@@ -14,6 +14,15 @@ def get_stats_for_period(client: tinvest.SyncClient,
                          market_instruments: tinvest.MarketInstrumentListResponse,
                          date_from: datetime.datetime, date_to: datetime.datetime,
                          sleep_seconds=0) -> pd.DataFrame:
+    assets_df = get_assets_df_for_period(client, market_instruments, date_from, date_to, sleep_seconds)
+    grouped_by_figi_stats = _make_group_by_figi_from_df_by_period(assets_df)
+    return grouped_by_figi_stats
+
+
+def get_assets_df_for_period(client: tinvest.SyncClient,
+                             market_instruments: tinvest.MarketInstrumentListResponse,
+                             date_from: datetime.datetime, date_to: datetime.datetime,
+                             sleep_seconds=0) -> pd.DataFrame:
     assets = list(map(lambda inst: Asset(inst.name, inst.figi, inst.currency.name, []),
                       market_instruments.payload.instruments))
 
@@ -33,8 +42,7 @@ def get_stats_for_period(client: tinvest.SyncClient,
         if i % 90 == 0 and i >= 90:
             time.sleep(sleep_seconds)
 
-    grouped_by_figi_stats = _make_df_from_assets(assets)
-    return grouped_by_figi_stats
+    return _make_df_by_period_from_assets(assets)
 
 
 def _get_top_std_top_increase(grouped_by_figi_stats: pd.DataFrame,
@@ -63,15 +71,17 @@ def _get_top_increase(grouped_by_figi_stats: pd.DataFrame,
     )
 
 
-def _make_df_from_assets(assets: List[Asset]) -> pd.DataFrame:
+def _make_df_by_period_from_assets(assets: List[Asset]) -> pd.DataFrame:
     assets_df = pd.DataFrame(assets).dropna()
     assets_df = assets_df[assets_df.closed.apply(len) > 1]
     assets_df = assets_df.explode('closed')
     assets_df = assets_df.reset_index(drop=True)
-
     assets_df['dt'] = assets_df['closed'].apply(lambda x: x.dttm if not pd.isnull(x) else x)
     assets_df['closed'] = assets_df['closed'].apply(lambda x: x.value if not pd.isnull(x) else x)
+    return assets_df
 
+
+def _make_group_by_figi_from_df_by_period(assets_df: pd.DataFrame) -> pd.DataFrame:
     unique_figi = assets_df.figi.drop_duplicates()
     for figi in unique_figi:
         series_closed = assets_df[assets_df.figi == figi]['closed']

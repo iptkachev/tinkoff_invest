@@ -6,8 +6,9 @@ from jobs import etf_stats_job, stocks_stats_job
 
 def main():
     logger = get_logger()
-    schedule.every().monday.at("09:00").do(etf_stats_job)
-    schedule.every().day.at("09:30").do(stocks_stats_job)
+    # set time as GMT (hint: moscow +3)
+    schedule.every().monday.at("05:00").do(etf_stats_job)
+    schedule.every().day.at("05:30").do(stocks_stats_job)
     logger.info("start scheduler")
     while True:
         schedule.run_pending()

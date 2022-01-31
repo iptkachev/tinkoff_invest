@@ -8,6 +8,8 @@ from tinvest import SyncClient
 from logger import log_start_end
 from stats import get_stats_for_period, _get_top_std_top_increase, _get_top_increase
 
+TIMEOUT = 3
+
 USD = "usd"
 RUB = "rub"
 TINKOFF_OPEN_API_TOKEN = "OPEN_API_TOKEN"
@@ -38,14 +40,14 @@ def etf_stats_job():
     max_increase_rub = _get_top_increase(grouped_by_figi_stats, RUB, top_increase, False)
 
     welcome_message = f"*Здоров, котаны. Свежая статистика по ETF за период {date_from.date()} - {date_to.date()}:*"
-    bot.send_message(text=welcome_message, parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID)
+    bot.send_message(text=welcome_message, parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID, timeout=TIMEOUT)
 
     rub = [
         (f"\n\nRUB Min std {top_std}, max increase", min_std_max_increase_rub),
         (f"\n\nRUB Max std {top_std}, max increase", max_std_max_increase_rub),
         (f"\n\nRUB Max increase", max_increase_rub),
     ]
-    bot.send_message(text="*Статистика по rub фондам:*", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID)
+    bot.send_message(text="*Статистика по rub фондам:*", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID, timeout=TIMEOUT)
     for message, stats in rub:
         _send_screenshot_with_caption(bot, message, stats)
 
@@ -54,7 +56,7 @@ def etf_stats_job():
         (f"\n\nUSD Max std {top_std}, max increase", max_std_max_increase_usd),
         (f"\n\nUSD Max increase", max_increase_usd),
     ]
-    bot.send_message(text="*Статистика по usd фондам:*", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID)
+    bot.send_message(text="*Статистика по usd фондам:*", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID, timeout=TIMEOUT)
     for message, stats in usd:
         _send_screenshot_with_caption(bot, message, stats)
 
@@ -76,7 +78,7 @@ def stocks_stats_job():
 
     welcome_message = f"*Здоров, котаны. Свежая статистика по акциям(топ-{top_increase})" \
                       f"за период {date_from.date()} - {date_to.date()}:*"
-    bot.send_message(text=welcome_message, parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID)
+    bot.send_message(text=welcome_message, parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID, timeout=TIMEOUT)
 
     _send_screenshot_with_caption(bot, f"\n\nRUB Max increase", max_increase_rub)
     _send_screenshot_with_caption(bot, f"\n\nUSD Max increase", max_increase_usd)
@@ -86,5 +88,5 @@ def _send_screenshot_with_caption(bot: Bot, message: str, stats: pd.DataFrame):
     png = "stats.png"
     dataframe_image.export(stats, png, table_conversion="matplotlib")
     with open(png, "rb") as file:
-        bot.send_photo(photo=file, caption=f"_{message}_", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID)
+        bot.send_photo(photo=file, caption=f"_{message}_", parse_mode=PARSEMODE_MARKDOWN, chat_id=INVEST_CLUB_CHAT_ID, timeout=TIMEOUT)
     os.remove(png)

@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 import tinvest
+from logger import get_logger
 
 YEAR_DAYS = 365
 
@@ -27,27 +28,32 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
                              sleep_seconds=0) -> pd.DataFrame:
     assets = list(map(lambda inst: Asset(inst.name, inst.figi, inst.currency.name, []),
                       market_instruments.payload.instruments))
+    logger = get_logger()
 
     counter_requests = 0
     max_requests_per_minute = 140  # from user experience, real limit 150
     for a in tqdm(assets, total=len(assets)):
         intervals = _cut_period_for_year_intervals(date_from, date_to)
         for j, interval_date_to in enumerate(intervals[1:], 1):
-            interval_date_from = intervals[j - 1]
-            a.closed.extend(
-                list(map(
-                    lambda x: ts_value(x.time.date(), float(x.c)),
-                    client.get_market_candles(
-                        a.figi,
-                        from_=interval_date_from,
-                        to=interval_date_to,
-                        interval=tinvest.schemas.CandleResolution.day
-                    ).payload.candles
-                ))
-            )
-            counter_requests += 1
-            if counter_requests % max_requests_per_minute == 0 and counter_requests >= max_requests_per_minute:
-                time.sleep(sleep_seconds)
+            try:
+                interval_date_from = intervals[j - 1]
+                a.closed.extend(
+                    list(map(
+                        lambda x: ts_value(x.time.date(), float(x.c)),
+                        client.get_market_candles(
+                            a.figi,
+                            from_=interval_date_from,
+                            to=interval_date_to,
+                            interval=tinvest.schemas.CandleResolution.day
+                        ).payload.candles
+                    ))
+                )
+                counter_requests += 1
+                if counter_requests % max_requests_per_minute == 0 and counter_requests >= max_requests_per_minute:
+                    time.sleep(sleep_seconds)
+            except tinvest.exceptions.UnexpectedError as error:
+                logger.error(a, interval_date_from, interval_date_to)
+                logger.error(error)
 
     return _make_df_by_period_from_assets(assets)
 

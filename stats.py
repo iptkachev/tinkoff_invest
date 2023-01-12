@@ -48,12 +48,14 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
                         ).payload.candles
                     ))
                 )
+            except tinvest.exceptions.UnexpectedError:
+                logger.error("Can't execute 'get_market_candles with'")
+                logger.error(f"{a}, {interval_date_from}, {interval_date_to}")
+                time.sleep(sleep_seconds)
+            finally:
                 counter_requests += 1
                 if counter_requests % max_requests_per_minute == 0 and counter_requests >= max_requests_per_minute:
                     time.sleep(sleep_seconds)
-            except tinvest.exceptions.UnexpectedError:
-                logger.error("Can't execute 'get_market_candles with'")
-                logger.error(a, interval_date_from, interval_date_to)
 
     return _make_df_by_period_from_assets(assets)
 

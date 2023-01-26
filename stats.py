@@ -31,7 +31,7 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
     logger = get_logger()
 
     counter_requests = 0
-    max_requests_per_minute = 140  # from user experience, real limit 150
+    max_requests_per_minute = 100  # from user experience
     for a in tqdm(assets, total=len(assets)):
         intervals = _cut_period_for_year_intervals(date_from, date_to)
         for j, interval_date_to in enumerate(intervals[1:], 1):
@@ -49,8 +49,11 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
                     ))
                 )
             except tinvest.exceptions.UnexpectedError:
-                logger.error("Can't execute 'get_market_candles with'")
+                logger.error("Can't execute 'get_market_candles' with args:")
                 logger.error(f"{a}, {interval_date_from}, {interval_date_to}")
+            except tinvest.exceptions.TooManyRequestsError:
+                logger.error(f"TooManyRequestsError (counter={counter_requests}) 'get_market_candles' with args:")
+                logger.error(f"{a}, {interval_date_from}, {interval_date_to}")           
             finally:
                 counter_requests += 1
                 if counter_requests % max_requests_per_minute == 0 and counter_requests >= max_requests_per_minute:
@@ -59,29 +62,29 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
     return _make_df_by_period_from_assets(assets)
 
 
-def _get_top_std_top_increase(grouped_by_figi_stats: pd.DataFrame,
-                              currency: str,
-                              top_std: int,
-                              ascending_std: bool,
-                              top_increase: int,
-                              ascending_increase: bool) -> pd.DataFrame:
+def _get_top_std_top_incr(grouped_by_figi_stats: pd.DataFrame,
+                          currency: str,
+                          top_std: int,
+                          ascending_std: bool,
+                          top_incr: int,
+                          ascending_incr: bool) -> pd.DataFrame:
     return (
         grouped_by_figi_stats[grouped_by_figi_stats.currency == currency]
-        .sort_values('std_increase_rate', ascending=ascending_std)
+        .sort_values('std_incr_rate', ascending=ascending_std)
         .head(top_std)
-        .sort_values('total_increase', ascending=ascending_increase)
-        .head(top_increase)
+        .sort_values('total_incr', ascending=ascending_incr)
+        .head(top_incr)
     )
 
 
-def _get_top_increase(grouped_by_figi_stats: pd.DataFrame,
-                      currency: str,
-                      top_increase: int,
-                      ascending_increase: bool) -> pd.DataFrame:
+def _get_top_incr(grouped_by_figi_stats: pd.DataFrame,
+                  currency: str,
+                  top_incr: int,
+                  ascending_incr: bool) -> pd.DataFrame:
     return (
         grouped_by_figi_stats[grouped_by_figi_stats.currency == currency]
-        .sort_values('total_increase', ascending=ascending_increase)
-        .head(top_increase)
+        .sort_values('total_incr', ascending=ascending_incr)
+        .head(top_incr)
     )
 
 
@@ -100,12 +103,12 @@ def _make_group_by_figi_from_df_by_period(assets_df: pd.DataFrame) -> pd.DataFra
     for figi in unique_figi:
         series_closed = assets_df[assets_df.figi == figi]['closed']
 
-        assets_df.loc[assets_df.figi == figi, 'increase_rate'] = (
+        assets_df.loc[assets_df.figi == figi, 'incr_rate'] = (
             series_closed / series_closed.shift()
         ).fillna(1)
 
-        assets_df.loc[assets_df.figi == figi, 'total_increase'] = (
-            assets_df.loc[assets_df.figi == figi, 'increase_rate']
+        assets_df.loc[assets_df.figi == figi, 'total_incr'] = (
+            assets_df.loc[assets_df.figi == figi, 'incr_rate']
             .cumprod()
             .tail(1)
             .reset_index(drop=True)
@@ -113,8 +116,8 @@ def _make_group_by_figi_from_df_by_period(assets_df: pd.DataFrame) -> pd.DataFra
         )
 
     grouped_by_figi_stats = assets_df.groupby(["figi", "name", "currency"], as_index=False).agg(
-        std_increase_rate=('increase_rate', 'std'),
-        total_increase=('total_increase', 'max'),
+        std_incr_rate=('incr_rate', 'std'),
+        total_incr=('total_incr', 'max'),
         count=('dt', 'count'),
     )
     return grouped_by_figi_stats

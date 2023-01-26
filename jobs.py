@@ -8,17 +8,16 @@ from tinvest import SyncClient
 from logger import log_start_end
 from stats import get_stats_for_period, _get_top_std_top_incr, _get_top_incr
 
-TELEGRAM_TIMEOUT = 3
+TELEGRAM_TIMEOUT = 8
 TINKOFF_SLEEP_SECONDS = 60
 
 USD = "usd"
 RUB = "rub"
-os.environ["TELEGRAM_BOT_TOKEN"] = "5005286891:AAH23q2VYZyC_m4-814i9SGvE0X0RVgURUM"
-os.environ["OPEN_API_TOKEN"] = "t.4MEsMwuaM45iHDQ4T217IhAFe6z7IUUMkQNJO1rkFbvJpv2HMmufAO8kqg86zJ4r4VzdrKQOxdZ9UQhN4Ps5GQ"
+
 TINKOFF_OPEN_API_TOKEN = "OPEN_API_TOKEN"
 TELEGRAM_BOT_TOKEN = "TELEGRAM_BOT_TOKEN"
-INVEST_CLUB_CHAT_ID = "-1001701958454"
-# INVEST_CLUB_CHAT_ID = 443842630  # ilya tkachev
+# INVEST_CLUB_CHAT_ID = "-1001701958454"
+INVEST_CLUB_CHAT_ID = 443842630  # ilya tkachev
 
 
 @log_start_end

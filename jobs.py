@@ -72,8 +72,8 @@ def stocks_stats_job():
     date_to = datetime.datetime.now()
     date_from = date_to - datetime.timedelta(days=days_to_analyze)
 
-    etfs = client.get_market_stocks()
-    grouped_by_figi_stats = get_stats_for_period(client, etfs, date_from, date_to, sleep_seconds=60)
+    stocks = client.get_market_stocks()
+    grouped_by_figi_stats = get_stats_for_period(client, stocks, date_from, date_to, sleep_seconds=60)
 
     max_incr_usd = _get_top_incr(grouped_by_figi_stats, USD, top_incr, False)
     max_incr_rub = _get_top_incr(grouped_by_figi_stats, RUB, top_incr, False)

@@ -31,7 +31,7 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
     logger = get_logger()
 
     counter_requests = 0
-    max_requests_per_minute = 100  # from user experience
+    max_requests_per_minute = 90  # from user experience
     for a in tqdm(assets, total=len(assets)):
         intervals = _cut_period_for_year_intervals(date_from, date_to)
         for j, interval_date_to in enumerate(intervals[1:], 1):
@@ -53,10 +53,13 @@ def get_assets_df_for_period(client: tinvest.SyncClient,
                 logger.error(f"{a}, {interval_date_from}, {interval_date_to}")
             except tinvest.exceptions.TooManyRequestsError:
                 logger.error(f"TooManyRequestsError (counter={counter_requests}) 'get_market_candles' with args:")
-                logger.error(f"{a}, {interval_date_from}, {interval_date_to}")           
+                logger.error(f"{a}, {interval_date_from}, {interval_date_to}")
+                time.sleep(sleep_seconds)
+                logger.info(f"sleep {sleep_seconds}")   
             finally:
                 counter_requests += 1
                 if counter_requests % max_requests_per_minute == 0 and counter_requests >= max_requests_per_minute:
+                    logger.info(f"sleep {sleep_seconds}")
                     time.sleep(sleep_seconds)
 
     return _make_df_by_period_from_assets(assets)
